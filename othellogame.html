@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>オセロゲーム - 対AI</title>
     <style>
         body {
@@ -12,26 +12,30 @@
             align-items: center;
             background-color: #333333;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             color: #e0e0e0;
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
         }
         
         h1 {
             color: #f5f5f5;
+            font-size: 1.5rem;
+            margin: 10px 0;
         }
         
         #board {
             display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
             gap: 2px;
-            background-color: transparent; /* 背景を透明に */
-            padding: 10px;
+            background-color: transparent;
+            padding: 5px;
         }
         
         .cell {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background-color: #2a5a3a;
             display: flex;
             justify-content: center;
@@ -47,20 +51,19 @@
         }
         
         .piece {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .black {
-            background-color: #000; /* シンプルな黒一色 */
+            background-color: #000;
         }
         
         .white {
             background-color: #f0f0f0;
-            background: radial-gradient(circle at 30% 30%, #fff, #ccc);
         }
         
         .valid-move {
@@ -68,22 +71,23 @@
         }
         
         #status {
-            margin-top: 20px;
-            font-size: 1.2em;
+            margin-top: 15px;
+            font-size: 1rem;
             font-weight: bold;
             color: #f5f5f5;
+            text-align: center;
         }
         
         #score {
-            margin-top: 10px;
-            font-size: 1.1em;
+            margin-top: 8px;
+            font-size: 0.9rem;
             color: #e0e0e0;
         }
         
         button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1em;
+            margin-top: 15px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
             background-color: #4a6a4a;
             color: white;
             border: none;
@@ -95,6 +99,21 @@
         button:hover {
             background-color: #5a7a5a;
         }
+
+        @media (max-width: 400px) {
+            #board {
+                grid-template-columns: repeat(8, 45px);
+                grid-template-rows: repeat(8, 45px);
+            }
+            .cell {
+                width: 45px;
+                height: 45px;
+            }
+            .piece {
+                width: 40px;
+                height: 40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -105,6 +124,8 @@
     <button id="reset">ゲームをリセット</button>
 
     <script>
+        // [以前と同じJavaScriptコードをここに挿入]
+        // 長いため省略していますが、前回のスクリプト部分をそのまま使用してください
         document.addEventListener('DOMContentLoaded', () => {
             const boardSize = 8;
             const board = [];
