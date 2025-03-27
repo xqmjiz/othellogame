@@ -31,6 +31,7 @@
             gap: 2px;
             background-color: transparent;
             padding: 5px;
+            margin-bottom: 15px;
         }
         
         .cell {
@@ -43,7 +44,7 @@
             cursor: pointer;
             position: relative;
             border-radius: 6px;
-            transition: background-color 0.2s;
+            transition: background-color 0.3s;
         }
         
         .cell:hover {
@@ -71,7 +72,7 @@
         }
         
         #status {
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 1rem;
             font-weight: bold;
             color: #f5f5f5;
@@ -79,13 +80,21 @@
         }
         
         #score {
-            margin-top: 8px;
+            margin-top: 5px;
             font-size: 0.9rem;
             color: #e0e0e0;
+            margin-bottom: 15px;
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         button {
-            margin-top: 15px;
             padding: 8px 16px;
             font-size: 0.9rem;
             background-color: #4a6a4a;
@@ -93,11 +102,17 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
+            min-width: 100px;
         }
         
         button:hover {
             background-color: #5a7a5a;
+        }
+        
+        button.active {
+            background-color: #3a8a3a;
+            transform: scale(1.05);
         }
 
         @media (max-width: 400px) {
@@ -113,6 +128,11 @@
                 width: 40px;
                 height: 40px;
             }
+            button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                min-width: 80px;
+            }
         }
     </style>
 </head>
@@ -120,17 +140,22 @@
     <h1>オセロゲーム - 対AI</h1>
     <div id="board"></div>
     <div id="status">あなたの番です（黒）</div>
-    <div id="score">黒: 2 - 白: 2</div>
-    <button id="reset">ゲームをリセット</button>
+    <div id="score">黒(あなた): 2 - 白(AI): 2</div>
+    
+    <div class="button-container">
+        <button id="reset">ゲームリセット</button>
+        <button id="changeTeam">白石に変更</button>
+        <button id="highlightToggle">ハイライト: ON</button>
+    </div>
 
     <script>
-        // [以前と同じJavaScriptコードをここに挿入]
-        // 長いため省略していますが、前回のスクリプト部分をそのまま使用してください
         document.addEventListener('DOMContentLoaded', () => {
             const boardSize = 8;
             const board = [];
-            let currentPlayer = 1; // 1: 黒 (プレイヤー), 2: 白 (AI)
             let gameOver = false;
+            let highlightEnabled = true;
+            let playerTeam = 1; // 1: 黒, 2: 白
+            let currentPlayer = 1; // 常にプレイヤーから開始
             
             // ボードの初期化
             function initBoard() {
@@ -153,21 +178,40 @@
                     }
                 }
                 
-                // 初期配置
-                board[3][3] = 2;
-                board[3][4] = 1;
-                board[4][3] = 1;
-                board[4][4] = 2;
+                // 初期配置（プレイヤーのチームに応じて反転）
+                if(playerTeam === 1) {
+                    // プレイヤーが黒の場合
+                    board[3][3] = 2;
+                    board[3][4] = 1;
+                    board[4][3] = 1;
+                    board[4][4] = 2;
+                } else {
+                    // プレイヤーが白の場合
+                    board[3][3] = 1;
+                    board[3][4] = 2;
+                    board[4][3] = 2;
+                    board[4][4] = 1;
+                }
                 
+                currentPlayer = playerTeam; // 常にプレイヤーから開始
                 updateBoardUI();
                 updateValidMovesHighlight();
                 updateStatus();
             }
             
-            // ボードの表示を更新（石の表示のみ）
-            function updateBoardUI() {
-                const cells = document.querySelectorAll('.cell');
+            // チーム変更
+            document.getElementById('changeTeam').addEventListener('click', () => {
+                playerTeam = playerTeam === 1 ? 2 : 1;
+                document.getElementById('changeTeam').textContent = 
+                    playerTeam === 1 ? '白石に変更' : '黒石に変更';
                 
+                // ゲームをリセットして新しいチームで開始
+                gameOver = false;
+                initBoard();
+            });
+            
+            // ボードの表示を更新
+            function updateBoardUI() {
                 for (let i = 0; i < boardSize; i++) {
                     for (let j = 0; j < boardSize; j++) {
                         const cell = document.querySelector(`.cell[data-row="${i}"][data-col="${j}"]`);
@@ -184,20 +228,20 @@
                         }
                     }
                 }
-                
                 updateScore();
             }
             
             // 有効な手のハイライトを更新
             function updateValidMovesHighlight() {
-                // すべてのセルからハイライトを削除
                 document.querySelectorAll('.cell').forEach(cell => {
                     cell.classList.remove('valid-move');
                 });
                 
-                // プレイヤーのターンかつゲームが終了していない場合のみハイライトを表示
-                if (currentPlayer === 1 && !gameOver) {
-                    const validMoves = getValidMoves(currentPlayer);
+                // プレイヤーのターンかつハイライトが有効な場合のみ表示
+                if (highlightEnabled && currentPlayer === playerTeam) {
+                    const playerColor = playerTeam; // プレイヤーの石の色 (1:黒, 2:白)
+                    const validMoves = getValidMoves(playerColor);
+                    
                     validMoves.forEach(move => {
                         const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
                         cell.classList.add('valid-move');
@@ -207,32 +251,35 @@
             
             // セルがクリックされた時の処理
             function handleCellClick(row, col) {
-                if (gameOver || currentPlayer !== 1) return;
+                if (gameOver || currentPlayer !== playerTeam) return;
                 
-                if (isValidMove(row, col, currentPlayer)) {
-                    makeMove(row, col, currentPlayer);
-                    currentPlayer = 2;
+                const playerColor = playerTeam; // プレイヤーの石の色
+                
+                if (isValidMove(row, col, playerColor)) {
+                    makeMove(row, col, playerColor);
+                    const aiColor = playerTeam === 1 ? 2 : 1; // AIの石の色
+                    currentPlayer = aiColor; // AIのターンに
                     updateStatus();
-                    updateValidMovesHighlight(); // ハイライトを更新
+                    updateValidMovesHighlight();
                     
                     // AIの手番
                     setTimeout(() => {
                         if (!gameOver) {
                             aiMove();
-                            currentPlayer = 1;
+                            currentPlayer = playerTeam; // プレイヤーのターンに戻す
                             updateStatus();
-                            updateValidMovesHighlight(); // ハイライトを更新
+                            updateValidMovesHighlight();
                             
-                            // プレイヤーが有効な手を持たない場合、AIが再びプレイ
-                            if (getValidMoves(1).length === 0) {
-                                currentPlayer = 2;
+                            // プレイヤーが打てない場合は再度AIのターン
+                            if (getValidMoves(playerTeam).length === 0) {
+                                currentPlayer = aiColor;
                                 updateStatus();
                                 setTimeout(() => {
                                     if (!gameOver) {
                                         aiMove();
-                                        currentPlayer = 1;
+                                        currentPlayer = playerTeam;
                                         updateStatus();
-                                        updateValidMovesHighlight(); // ハイライトを更新
+                                        updateValidMovesHighlight();
                                     }
                                 }, 500);
                             }
@@ -248,10 +295,7 @@
                 board[row][col] = player;
                 flipPieces(row, col, player);
                 updateBoardUI();
-                
-                // ゲーム終了チェック
                 checkGameOver();
-                
                 return true;
             }
             
@@ -259,8 +303,8 @@
             function flipPieces(row, col, player) {
                 const directions = [
                     [-1, -1], [-1, 0], [-1, 1],
-                    [0, -1],           [0, 1],
-                    [1, -1],  [1, 0],  [1, 1]
+                    [0, -1], [0, 1],
+                    [1, -1], [1, 0], [1, 1]
                 ];
                 
                 directions.forEach(([dx, dy]) => {
@@ -288,8 +332,8 @@
                 
                 const directions = [
                     [-1, -1], [-1, 0], [-1, 1],
-                    [0, -1],           [0, 1],
-                    [1, -1],  [1, 0],  [1, 1]
+                    [0, -1], [0, 1],
+                    [1, -1], [1, 0], [1, 1]
                 ];
                 
                 for (const [dx, dy] of directions) {
@@ -307,14 +351,12 @@
                         return true;
                     }
                 }
-                
                 return false;
             }
             
             // 有効な手のリストを取得
             function getValidMoves(player) {
                 const validMoves = [];
-                
                 for (let i = 0; i < boardSize; i++) {
                     for (let j = 0; j < boardSize; j++) {
                         if (isValidMove(i, j, player)) {
@@ -322,21 +364,20 @@
                         }
                     }
                 }
-                
                 return validMoves;
             }
             
             // AIの手
             function aiMove() {
-                const validMoves = getValidMoves(2);
+                const aiColor = playerTeam === 1 ? 2 : 1; // AIの石の色
+                const validMoves = getValidMoves(aiColor);
                 
                 if (validMoves.length > 0) {
-                    // 少し賢いAI: 最も多くの石をひっくり返せる手を選ぶ
                     let bestMove = null;
                     let maxFlips = -1;
                     
                     for (const move of validMoves) {
-                        const flips = countFlips(move.row, move.col, 2);
+                        const flips = countFlips(move.row, move.col, aiColor);
                         if (flips > maxFlips) {
                             maxFlips = flips;
                             bestMove = move;
@@ -344,13 +385,10 @@
                     }
                     
                     if (bestMove) {
-                        makeMove(bestMove.row, bestMove.col, 2);
+                        makeMove(bestMove.row, bestMove.col, aiColor);
                     }
-                } else {
-                    // AIが有効な手を持たない場合
-                    if (getValidMoves(1).length === 0) {
-                        gameOver = true;
-                    }
+                } else if (getValidMoves(playerTeam).length === 0) {
+                    gameOver = true;
                 }
             }
             
@@ -361,8 +399,8 @@
                 let totalFlips = 0;
                 const directions = [
                     [-1, -1], [-1, 0], [-1, 1],
-                    [0, -1],           [0, 1],
-                    [1, -1],  [1, 0],  [1, 1]
+                    [0, -1], [0, 1],
+                    [1, -1], [1, 0], [1, 1]
                 ];
                 
                 directions.forEach(([dx, dy]) => {
@@ -380,29 +418,30 @@
                         totalFlips += flips;
                     }
                 });
-                
                 return totalFlips;
             }
             
             // ゲーム終了チェック
             function checkGameOver() {
-                const blackMoves = getValidMoves(1).length;
-                const whiteMoves = getValidMoves(2).length;
+                const blackMoves = getValidMoves(1);
+                const whiteMoves = getValidMoves(2);
                 
-                if (blackMoves === 0 && whiteMoves === 0) {
+                if (blackMoves.length === 0 && whiteMoves.length === 0) {
                     gameOver = true;
                     const [blackCount, whiteCount] = countPieces();
-                    
                     let status = document.getElementById('status');
-                    if (blackCount > whiteCount) {
-                        status.textContent = `ゲーム終了！ あなたの勝ち (黒 ${blackCount} - 白 ${whiteCount})`;
-                    } else if (whiteCount > blackCount) {
-                        status.textContent = `ゲーム終了！ AIの勝ち (黒 ${blackCount} - 白 ${whiteCount})`;
-                    } else {
-                        status.textContent = `ゲーム終了！ 引き分け (黒 ${blackCount} - 白 ${whiteCount})`;
-                    }
                     
-                    updateValidMovesHighlight(); // ゲーム終了時はハイライトを消す
+                    let playerCount = playerTeam === 1 ? blackCount : whiteCount;
+                    let aiCount = playerTeam === 1 ? whiteCount : blackCount;
+                    
+                    if (playerCount > aiCount) {
+                        status.textContent = `ゲーム終了！ あなたの勝ち (${playerTeam === 1 ? '黒' : '白'} ${playerCount} - ${playerTeam === 1 ? '白' : '黒'} ${aiCount})`;
+                    } else if (aiCount > playerCount) {
+                        status.textContent = `ゲーム終了！ AIの勝ち (${playerTeam === 1 ? '黒' : '白'} ${playerCount} - ${playerTeam === 1 ? '白' : '黒'} ${aiCount})`;
+                    } else {
+                        status.textContent = `ゲーム終了！ 引き分け (${playerTeam === 1 ? '黒' : '白'} ${playerCount} - ${playerTeam === 1 ? '白' : '黒'} ${aiCount})`;
+                    }
+                    updateValidMovesHighlight();
                 }
             }
             
@@ -417,47 +456,52 @@
                         else if (board[i][j] === 2) whiteCount++;
                     }
                 }
-                
                 return [blackCount, whiteCount];
             }
             
             // スコアを更新
             function updateScore() {
                 const [blackCount, whiteCount] = countPieces();
-                document.getElementById('score').textContent = `黒: ${blackCount} - 白: ${whiteCount}`;
+                document.getElementById('score').textContent = 
+                    playerTeam === 1 
+                    ? `黒(あなた): ${blackCount} - 白(AI): ${whiteCount}`
+                    : `白(あなた): ${whiteCount} - 黒(AI): ${blackCount}`;
             }
             
             // ステータスを更新
             function updateStatus() {
                 const status = document.getElementById('status');
+                if (gameOver) return;
                 
-                if (gameOver) {
-                    return;
-                }
-                
-                if (currentPlayer === 1) {
-                    if (getValidMoves(1).length > 0) {
-                        status.textContent = 'あなたの番です（黒）';
-                    } else {
-                        status.textContent = 'あなたは有効な手がないためパスします';
-                    }
+                if (currentPlayer === playerTeam) {
+                    const moves = getValidMoves(playerTeam);
+                    status.textContent = moves.length > 0 
+                        ? `あなたの番です（${playerTeam === 1 ? '黒' : '白'}）` 
+                        : 'あなたは有効な手がないためパスします';
                 } else {
-                    if (getValidMoves(2).length > 0) {
-                        status.textContent = 'AIの番です（白）...';
-                    } else {
-                        status.textContent = 'AIは有効な手がないためパスします';
-                    }
+                    const aiColor = playerTeam === 1 ? 2 : 1;
+                    const moves = getValidMoves(aiColor);
+                    status.textContent = moves.length > 0 
+                        ? 'AIの番です...' 
+                        : 'AIは有効な手がないためパスします';
                 }
             }
             
+            // ハイライトトグル
+            document.getElementById('highlightToggle').addEventListener('click', () => {
+                highlightEnabled = !highlightEnabled;
+                document.getElementById('highlightToggle').textContent = 
+                    `ハイライト: ${highlightEnabled ? 'ON' : 'OFF'}`;
+                updateValidMovesHighlight();
+            });
+            
             // リセットボタン
             document.getElementById('reset').addEventListener('click', () => {
-                currentPlayer = 1;
                 gameOver = false;
                 initBoard();
             });
             
-            // ゲーム開始
+            // 初期化
             initBoard();
         });
     </script>
